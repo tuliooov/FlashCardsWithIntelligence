@@ -1,25 +1,35 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 
-const flashCardsTotal = 12
+const flashCardsTotal = 20
 
-export const StepQuestionsFlash = ({ subject }: { subject: string }) => {
+export const StepQuestionsFlash = ({
+  level,
+  subject,
+}: {
+  subject: string
+  level: string
+}) => {
+  const router = useRouter()
+
   const [flashCardsCount, setFlashCardCount] = useState(0)
   const [shouldShowAnswer, setShouldShowAnswer] = useState(false)
   const [question, setQuestion] = useState('')
-  const [options, setOptions] = useState([])
+  const [options, setOptions] = useState<string[]>([])
   const [answer, setAnswer] = useState('')
+  const [loading, setloading] = useState(true)
 
-  const fetchQuestion = async () => {
+  const fetchQuestion = useCallback(async () => {
     const newMessage = {
       message: `
-         Me faça uma pergunta sobre ${subject} avançado e me dê 4 alternativas sobre, além disso me de a resposta correta. Me responda diretamente e com a pergunta e respostas separadas por ponto e virgula. Siga exatamente o modelo abaixo:
-         
-         Pergunta: {coloque a pergunta aqui} \n
-         Alternativas: {a) alternativa a;b)  alternativa b;c) alternativa c;d) alternativa d} \n
-         Resposta correta: {coloque a resposta correta aqui}
+         Me faça uma pergunta sobre ${subject} ${level} me de 4 alternativas e me diga a resposta correta, siga exatamente o modelo a seguir:
+
+         {pergunta aqui} \n
+         {alternativas aqui separada em ponto e virgula}
+         {resposta correta aqui}
         `,
 
       direction: 'outgoing',
@@ -42,20 +52,30 @@ export const StepQuestionsFlash = ({ subject }: { subject: string }) => {
 
         const options = splited[1].replace('Alternativas:', '').split(';')
 
-        const answers = splited[2].replace('Resposta correta:', '')
+        const answers = splited[2]
+          .replace('Resposta correta: ', '')
+          .replace('Resposta correta:', '')
 
         setQuestion(quetions)
         setAnswer(answers)
         setOptions(options)
+
+        setloading(false)
       }
     } catch (error) {
       console.error('Error processing message:', error)
     } finally {
       // setIsTyping(false)
     }
-  }
+  }, [level, subject])
 
-  async function processMessageToChatGPT(chatMessages) {
+  async function processMessageToChatGPT(
+    chatMessages: {
+      message: string
+      direction: string
+      sender: string
+    }[],
+  ) {
     const apiMessages = chatMessages.map((messageObject) => {
       const role = messageObject.sender === 'ChatGPT' ? 'assistant' : 'user'
       return { role, content: messageObject.message }
@@ -81,9 +101,37 @@ export const StepQuestionsFlash = ({ subject }: { subject: string }) => {
     return response.json()
   }
 
+  const handleChoose = (option: string) => () => {
+    const alternative = option.slice(
+      option.indexOf(')') - 1,
+      option.indexOf(')'),
+    )
+    const alternativeAnswer = answer.slice(
+      answer.indexOf(')') - 1,
+      answer.indexOf(')'),
+    )
+    setFlashCardCount((count) => count + 1)
+    setShouldShowAnswer(true)
+    if (alternative === alternativeAnswer) {
+      alert('Acertou')
+
+      setTimeout(() => {
+        setShouldShowAnswer(false)
+        setloading(true)
+        fetchQuestion()
+      }, 2000)
+    } else {
+      alert('Errou')
+
+      setTimeout(() => {
+        router.push('/', { scroll: false })
+      }, 2000)
+    }
+  }
+
   useEffect(() => {
     fetchQuestion()
-  }, [])
+  }, [fetchQuestion])
 
   return (
     <>
@@ -91,7 +139,7 @@ export const StepQuestionsFlash = ({ subject }: { subject: string }) => {
         <div className="space-y-4">
           <div>
             <span className="text-xl leading-heading font-bold">
-              Fundamentos do {subject}
+              {subject} {level}
             </span>
           </div>
 
@@ -142,15 +190,27 @@ export const StepQuestionsFlash = ({ subject }: { subject: string }) => {
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  <div>
-                    <p>{question}</p>
-                  </div>
+                  {loading ? (
+                    <>loading...</>
+                  ) : (
+                    <>
+                      <div>
+                        <p>{question}</p>
+                      </div>
 
-                  <div>
-                    {options.map((option) => (
-                      <p key={option}>{option}</p>
-                    ))}
-                  </div>
+                      <div className="flex flex-col gap-2">
+                        {options.map((option) => (
+                          <button
+                            onClick={handleChoose(option)}
+                            key={option}
+                            className="text-left hover:bg-marine-400 rounded-md py-0 px-2"
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </motion.p>
               )}
             </AnimatePresence>
@@ -162,15 +222,15 @@ export const StepQuestionsFlash = ({ subject }: { subject: string }) => {
         </div>
       </div>
 
-      <button
+      {/* <button
         onClick={() => {
-          setFlashCardCount((count) => count + 1)
-          setShouldShowAnswer(true)
+          // setFlashCardCount((count) => count + 1)
+          // setShouldShowAnswer(true)
         }}
         className="bg-mirage-50 text-marine-500 py-8 w-full font-bold uppercase hover:bg-mirage-50/90 md:w-[320px] md:mb-16 md:rounded-full md:py-6"
       >
         Revelar respostas
-      </button>
+      </button> */}
     </>
   )
 }

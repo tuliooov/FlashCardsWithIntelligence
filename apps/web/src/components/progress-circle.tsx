@@ -22,7 +22,7 @@ export function ProgressCircle({ progress }: ProgressCircleProps) {
         cy="50"
         r="40"
         fill="transparent"
-        strokeDashoffset="calc(400 - (400 * 45) / 100)"
+        strokeDashoffset={`calc(400 - (400 * ${progress}) / 100)`}
       ></circle>
     </svg>
   )
