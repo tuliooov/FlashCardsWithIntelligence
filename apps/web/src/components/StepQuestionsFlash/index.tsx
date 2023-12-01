@@ -27,7 +27,7 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
   const fetchQuestion = useCallback(async () => {
     const newMessage = {
       message: `
-      Return me only a JSON with a 3 different question about ${subject} ${level}, 4 alternatives and also a correct answer, follow exactly the following model:
+      Return me only a JSON with a 20 different question about ${subject} ${level}, 4 alternatives and also a correct answer, follow exactly the following model:
       {
         questions: [
           {
@@ -99,7 +99,6 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
   }
 
   const onSuccess = () => {
-    alert('Acertou')
     setTimeout(() => {
       setShouldShowAnswer(false)
       setNumberQuestion((value) => value + 1)
