@@ -27,7 +27,7 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
   const fetchQuestion = useCallback(async () => {
     const newMessage = {
       message: `
-      Me retorne apenas um JSON com 20 perguntas diferentes sobre ${subject} ${level}, 4 alternativas e também uma resposta correta, siga exatamente o seguinte modelo:
+      Me retorne apenas um JSON com 10 perguntas diferentes sobre ${subject} ${level}, 4 alternativas e também uma resposta correta, siga exatamente o seguinte modelo:
       {
         questions: [
           {
