@@ -20,29 +20,33 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
   const [shouldShowAnswer, setShouldShowAnswer] = useState(false)
   const [numberQuestion, setNumberQuestion] = useState(0)
   const [loading, setloading] = useState(true)
-  const [questions, setQuestions] = useState<IQuestion[]>([])
+  const [message, setMessage] = useState('')
+  const [question, setQuestion] = useState<IQuestion>()
+  const [menssages, setMessages] = useState<
+    {
+      message: string
+      direction?: string
+      sender: string
+    }[]
+  >([])
 
   const { level, subject, score = 0 } = getSubjectByUuid(uuid)
 
   const fetchQuestion = useCallback(async () => {
     const newMessage = {
       message: `
-      Me retorne apenas um JSON com 10 perguntas diferentes sobre ${subject} ${level}, 4 alternativas e também uma resposta correta, siga exatamente o seguinte modelo:
+      Me retorne APENAS um objeto JSON uma pergunta diferente sobre ${subject} ${level}, 4 alternativas e também uma resposta correta, siga exatamente o seguinte modelo:
       {
-        questions: [
-          {
-            question: 'responda aqui',
-            alternatives: 'alternativas aqui'
-            answer: 'resposta aqui'
-          }
-        ]
-      }`,
-
+        question: 'responda aqui',
+        alternatives: ['alternativa aqui']
+        answer: 'resposta aqui'
+      }
+`,
       direction: 'outgoing',
       sender: 'user',
     }
     try {
-      const response = await processMessageToChatGPT([newMessage])
+      const response = await processMessageToChatGPT([...menssages, newMessage])
       const content = response.choices[0]?.message?.content
       if (content) {
         const chatGPTResponse = {
@@ -50,12 +54,14 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
           sender: 'ChatGPT',
         }
         console.log(`chatGPTResponse`, chatGPTResponse)
+        setMessages([...menssages, chatGPTResponse])
         const { message } = chatGPTResponse
+        setMessage(message)
+        const resposta = JSON.parse(message)
 
-        const { questions } = JSON.parse(message)
-
-        setQuestions(questions)
+        setQuestion(resposta)
         setNumberQuestion(0)
+        setShouldShowAnswer(false)
 
         setloading(false)
       }
@@ -64,12 +70,12 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
     } finally {
       // setIsTyping(false)
     }
-  }, [level, subject])
+  }, [level, menssages, subject])
 
   async function processMessageToChatGPT(
     chatMessages: {
       message: string
-      direction: string
+      direction?: string
       sender: string
     }[],
   ) {
@@ -100,8 +106,11 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
 
   const onSuccess = () => {
     setTimeout(() => {
-      setShouldShowAnswer(false)
-      setNumberQuestion((value) => value + 1)
+      setNumberQuestion((value) => {
+        const newValue = value + 1
+        return newValue
+      })
+      fetchQuestion()
     }, 2000)
   }
 
@@ -115,20 +124,22 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
   const handleChoose = (option: string) => () => {
     setFlashCardCount((count) => count + 1)
     setShouldShowAnswer(true)
-    const question = questions[numberQuestion]
     if (question && option === question.answer) onSuccess()
     else onFail()
   }
 
   useEffect(() => {
-    if (numberQuestion > score) {
+    if (numberQuestion === 2) {
+      alert('Voce ganhou')
+      router.push('/', { scroll: false })
+    } else if (numberQuestion > score) {
       changeScoreSubject(uuid, numberQuestion)
     }
-  }, [numberQuestion, score, uuid])
+  }, [numberQuestion, router, score, uuid])
 
   useEffect(() => {
     fetchQuestion()
-  }, [fetchQuestion])
+  }, [])
 
   return (
     <>
@@ -178,7 +189,7 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  {questions[numberQuestion]?.answer}
+                  {question?.answer}
                 </motion.p>
               ) : (
                 <motion.p
@@ -192,21 +203,19 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
                   ) : (
                     <>
                       <div>
-                        <p>{questions[numberQuestion]?.question}</p>
+                        <p>{question?.question}</p>
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        {(questions[numberQuestion]?.alternatives || []).map(
-                          (option) => (
-                            <button
-                              onClick={handleChoose(option)}
-                              key={option}
-                              className="text-left hover:bg-marine-400 rounded-md py-0 px-2"
-                            >
-                              {option}
-                            </button>
-                          ),
-                        )}
+                        {(question?.alternatives || []).map((option) => (
+                          <button
+                            onClick={handleChoose(option)}
+                            key={option}
+                            className="text-left hover:bg-marine-400 rounded-md py-0 px-2"
+                          >
+                            {option}
+                          </button>
+                        ))}
                       </div>
                     </>
                   )}
@@ -220,6 +229,8 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
           </div>
         </div>
       </div>
+
+      {message}
 
       {/* <button
         onClick={() => {
