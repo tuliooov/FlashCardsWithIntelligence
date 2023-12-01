@@ -18,7 +18,7 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
 
   const [flashCardsCount, setFlashCardCount] = useState(0)
   const [shouldShowAnswer, setShouldShowAnswer] = useState(false)
-  const [numberQuestion, setNumberQuestion] = useState(0)
+  const [numberQuestion, setNumberQuestion] = useState(1)
   const [loading, setloading] = useState(true)
   const [message, setMessage] = useState('')
   const [question, setQuestion] = useState<IQuestion>()
@@ -60,7 +60,6 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
         const resposta = JSON.parse(message)
 
         setQuestion(resposta)
-        setNumberQuestion(0)
         setShouldShowAnswer(false)
 
         setloading(false)
@@ -129,7 +128,7 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
   }
 
   useEffect(() => {
-    if (numberQuestion === 2) {
+    if (numberQuestion === 20) {
       alert('Voce ganhou')
       router.push('/', { scroll: false })
     } else if (numberQuestion > score) {
