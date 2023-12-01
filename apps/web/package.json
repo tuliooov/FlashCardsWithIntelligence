@@ -16,6 +16,7 @@
     "openai": "^4.0.0",
     "react": "^18",
     "react-dom": "^18",
+    "react-uuid": "^2.0.0",
     "tokens": "workspace:*",
     "ui": "workspace:*"
   },

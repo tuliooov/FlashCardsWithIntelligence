@@ -1,36 +1,34 @@
 'use client'
 // import Image from 'next/image'
-import { MoveRight } from 'lucide-react'
+import { MoveRight, Plus } from 'lucide-react'
 import { ProgressCircle } from '../components/progress-circle'
-import { subjectsMock } from '../utils/subjects'
+import { getSubjects } from '../utils/subjects'
 import Link from 'next/link'
 
 export default function Home() {
+  const subjects = getSubjects()
+
   return (
     <div>
       <div className="bg-gradient-to-t from-marine-600 to-marine-500 px-6 py-5 flex flex-col gap-8  items-left˜">
-        {/* <Image
-          src="https://github.com/RenanFachin.png"
-          alt=""
-          width={48}
-          height={48}
-          className="rounded-full h-16 w-16 self-end"
-        /> */}
         <span className="text-2xl font-bold leading-heading text-mirage-50">
           Dashboard
         </span>
       </div>
 
       <main className="p-6 flex flex-col gap-4">
-        <span className="text-lg font-bold leading-heading">Coleções</span>
+        <div className="flex flex-row justify-between">
+          <span className="text-lg font-bold leading-heading">Subjects</span>
+          <Link href={'/flash/create'}>
+            <button className="rounded-full hover:bg-marine-200 py-2 px-2 active:bg-marine-300">
+              <Plus className="w-5 h-5" />
+            </button>
+          </Link>
+        </div>
 
         {/* cards */}
         <div className="flex flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3">
-          {subjectsMock.map((subject, i) => {
-            const value = parseInt(
-              localStorage.getItem(subject.title) ?? '0',
-              10,
-            )
+          {subjects.map((subject, i) => {
             return (
               <div
                 key={i}
@@ -44,26 +42,27 @@ export default function Home() {
                   <h2 className="font-bold leading-heading">{subject.title}</h2>
 
                   <p className="text-smoke-800 text-sm leading-base">
-                    Treine seus conhecimentos nos fundamentos do JavaScript como
-                    Arrays, variáveis, condicionais e estruturas de repetição.
+                    Train your knowledge in the {subject.title}
                   </p>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <Link
-                    href={`/flash/${subject.subject}/${subject.level}`}
+                    href={`/flash/${subject.uuid}`}
                     className="py-3 px-5 flex items-center gap-3 font-bold text-sm bg-marine-500 rounded-md text-mirage-50 hover:bg-marine-600 transition-colors"
                   >
-                    Acessar
+                    View
                     <MoveRight className="w-5 h-5" />
                   </Link>
 
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6">
-                      <ProgressCircle progress={(60 / 20) * value} />
+                      <ProgressCircle
+                        progress={(60 / 20) * (subject.score || 0)}
+                      />
                     </div>
                     <span className="text-smoke-600 text-sm leading-base">
-                      {value}/20
+                      {subject.score || 0}/20
                     </span>
                   </div>
                 </div>

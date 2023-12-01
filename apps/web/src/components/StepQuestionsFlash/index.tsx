@@ -3,34 +3,40 @@
 import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { changeScoreSubject, getSubjectByUuid } from '../../utils/subjects'
 
 const flashCardsTotal = 20
 
-export const StepQuestionsFlash = ({
-  level,
-  subject,
-}: {
-  subject: string
-  level: string
-}) => {
+interface IQuestion {
+  question: string
+  alternatives: string[]
+  answer: string
+}
+
+export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
   const router = useRouter()
 
   const [flashCardsCount, setFlashCardCount] = useState(0)
   const [shouldShowAnswer, setShouldShowAnswer] = useState(false)
-  const [question, setQuestion] = useState('')
-  const [options, setOptions] = useState<string[]>([])
-  const [answer, setAnswer] = useState('')
+  const [numberQuestion, setNumberQuestion] = useState(0)
   const [loading, setloading] = useState(true)
+  const [questions, setQuestions] = useState<IQuestion[]>([])
+
+  const { level, subject, score = 0 } = getSubjectByUuid(uuid)
 
   const fetchQuestion = useCallback(async () => {
     const newMessage = {
       message: `
-         Me faça uma pergunta sobre ${subject} ${level} me de 4 alternativas e me diga a resposta correta, siga exatamente o modelo a seguir:
-
-         {pergunta aqui} \n
-         {alternativas aqui separada em ponto e virgula}
-         {resposta correta aqui}
-        `,
+      Return me only a JSON with a 3 different question about ${subject} ${level}, 4 alternatives and also a correct answer, follow exactly the following model:
+      {
+        questions: [
+          {
+            question: 'ask here',
+            alternatives: 'alternatives here'
+            answer: 'answer here'
+          }
+        ]
+      } `,
 
       direction: 'outgoing',
       sender: 'user',
@@ -46,19 +52,10 @@ export const StepQuestionsFlash = ({
         console.log(`chatGPTResponse`, chatGPTResponse)
         const { message } = chatGPTResponse
 
-        const splited = message.split('\n\n')
+        const { questions } = JSON.parse(message)
 
-        const quetions = splited[0].replace('Pergunta:', '')
-
-        const options = splited[1].replace('Alternativas:', '').split(';')
-
-        const answers = splited[2]
-          .replace('Resposta correta: ', '')
-          .replace('Resposta correta:', '')
-
-        setQuestion(quetions)
-        setAnswer(answers)
-        setOptions(options)
+        setQuestions(questions)
+        setNumberQuestion(0)
 
         setloading(false)
       }
@@ -101,33 +98,34 @@ export const StepQuestionsFlash = ({
     return response.json()
   }
 
+  const onSuccess = () => {
+    alert('Acertou')
+    setTimeout(() => {
+      setShouldShowAnswer(false)
+      setNumberQuestion((value) => value + 1)
+    }, 2000)
+  }
+
+  const onFail = () => {
+    alert('Errou')
+    setTimeout(() => {
+      router.push('/', { scroll: false })
+    }, 2000)
+  }
+
   const handleChoose = (option: string) => () => {
-    const alternative = option.slice(
-      option.indexOf(')') - 1,
-      option.indexOf(')'),
-    )
-    const alternativeAnswer = answer.slice(
-      answer.indexOf(')') - 1,
-      answer.indexOf(')'),
-    )
     setFlashCardCount((count) => count + 1)
     setShouldShowAnswer(true)
-    if (alternative === alternativeAnswer) {
-      alert('Acertou')
-
-      setTimeout(() => {
-        setShouldShowAnswer(false)
-        setloading(true)
-        fetchQuestion()
-      }, 2000)
-    } else {
-      alert('Errou')
-
-      setTimeout(() => {
-        router.push('/', { scroll: false })
-      }, 2000)
-    }
+    const question = questions[numberQuestion]
+    if (question && option === question.answer) onSuccess()
+    else onFail()
   }
+
+  useEffect(() => {
+    if (numberQuestion > score) {
+      changeScoreSubject(uuid, numberQuestion)
+    }
+  }, [numberQuestion, score, uuid])
 
   useEffect(() => {
     fetchQuestion()
@@ -181,7 +179,7 @@ export const StepQuestionsFlash = ({
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  {answer}
+                  {questions[numberQuestion]?.answer}
                 </motion.p>
               ) : (
                 <motion.p
@@ -195,19 +193,21 @@ export const StepQuestionsFlash = ({
                   ) : (
                     <>
                       <div>
-                        <p>{question}</p>
+                        <p>{questions[numberQuestion]?.question}</p>
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        {options.map((option) => (
-                          <button
-                            onClick={handleChoose(option)}
-                            key={option}
-                            className="text-left hover:bg-marine-400 rounded-md py-0 px-2"
-                          >
-                            {option}
-                          </button>
-                        ))}
+                        {(questions[numberQuestion]?.alternatives || []).map(
+                          (option) => (
+                            <button
+                              onClick={handleChoose(option)}
+                              key={option}
+                              className="text-left hover:bg-marine-400 rounded-md py-0 px-2"
+                            >
+                              {option}
+                            </button>
+                          ),
+                        )}
                       </div>
                     </>
                   )}
