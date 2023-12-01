@@ -1,31 +1,13 @@
 export interface ISubject {
   uuid: string
   title: string
+  description: string
   subject: string
   level: string
   score?: number
 }
 
-export const subjectsMock: ISubject[] = [
-  {
-    uuid: '1',
-    title: 'Javascript Fundamentals',
-    subject: 'Javascript',
-    level: 'easy',
-  },
-  {
-    uuid: '2',
-    title: 'Javascript Intermediary',
-    subject: 'Javascript',
-    level: 'hard',
-  },
-  {
-    uuid: '3',
-    title: 'Javascript Advanced',
-    subject: 'Javascript',
-    level: 'extremely hard',
-  },
-]
+export const subjectsMock: ISubject[] = []
 
 export const getSubjectByUuid = (uuid: string) => {
   const subjects = getSubjects()

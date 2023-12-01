@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { changeScoreSubject, getSubjectByUuid } from '../../utils/subjects'
+import { useAtom } from 'jotai'
+import { languageAtom } from '../../utils/atoms'
 
 const flashCardsTotal = 20
 
@@ -15,6 +17,7 @@ interface IQuestion {
 
 export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
   const router = useRouter()
+  const [language] = useAtom(languageAtom)
 
   const [flashCardsCount, setFlashCardCount] = useState(0)
   const [shouldShowAnswer, setShouldShowAnswer] = useState(false)
@@ -34,14 +37,9 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
 
   const fetchQuestion = useCallback(async () => {
     const newMessage = {
-      message: `
-      Me retorne APENAS um objeto JSON uma pergunta diferente sobre ${subject} ${level}, 4 alternativas e também uma resposta correta, siga exatamente o seguinte modelo:
-      {
-        question: 'responda aqui',
-        alternatives: ['alternativa aqui']
-        answer: 'resposta aqui'
-      }
-`,
+      message: language.flash.chatGPT
+        .replace('[subject]', subject)
+        .replace('[level]', level),
       direction: 'outgoing',
       sender: 'user',
     }
@@ -114,7 +112,7 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
   }
 
   const onFail = () => {
-    alert('Errou')
+    alert(language.flash.error)
     setTimeout(() => {
       router.push('/', { scroll: false })
     }, 2000)
@@ -129,12 +127,12 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
 
   useEffect(() => {
     if (numberQuestion === 20) {
-      alert('Voce ganhou')
+      alert(language.flash.success)
       router.push('/', { scroll: false })
     } else if (numberQuestion > score) {
       changeScoreSubject(uuid, numberQuestion)
     }
-  }, [numberQuestion, router, score, uuid])
+  }, [language.flash.success, numberQuestion, router, score, uuid])
 
   useEffect(() => {
     fetchQuestion()
@@ -198,7 +196,7 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
                   exit={{ opacity: 0 }}
                 >
                   {loading ? (
-                    <>loading...</>
+                    <>{language.flash.loading}...</>
                   ) : (
                     <>
                       <div>
