@@ -227,7 +227,7 @@ export const StepQuestionsFlash = ({ uuid }: { uuid: string }) => {
         </div>
       </div>
 
-      {message}
+      <p className="text-marine-300">{message}</p>
 
       {/* <button
         onClick={() => {
